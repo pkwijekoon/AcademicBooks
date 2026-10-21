@@ -1,0 +1,347 @@
+
+/* =========================================
+   ACADEMICBOOKS - COLOURS
+========================================= */
+
+:root {
+    --dark-green: #005a32;
+    --light-green: #c7e9c0;
+    --text-dark: #173b2b;
+    --white: #ffffff;
+}
+
+
+/* =========================================
+   GENERAL
+========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text-dark);
+    background: var(--light-green);
+    line-height: 1.5;
+}
+
+button {
+    font: inherit;
+}
+
+
+/* =========================================
+   HOME PAGE HEADER
+========================================= */
+
+.site-header {
+    background: var(--dark-green);
+    color: var(--white);
+    text-align: center;
+    padding: 25px 18px 22px;
+}
+
+.site-header h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 40px);
+    letter-spacing: 0.5px;
+}
+
+.site-header p {
+    margin: 6px 0 0;
+    font-size: 16px;
+    color: var(--light-green);
+}
+
+
+/* =========================================
+   LIBRARY
+========================================= */
+
+.library {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    padding: 38px 24px 55px;
+}
+
+.library-section h2 {
+    text-align: center;
+    margin: 0 0 30px;
+    font-size: 28px;
+    color: var(--dark-green);
+}
+
+
+/* =========================================
+   BOOK GRID
+========================================= */
+
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(220px, 270px)
+    );
+    justify-content: center;
+    align-items: start;
+    gap: 28px;
+}
+
+
+/* =========================================
+   BOOK CARD
+========================================= */
+
+.book-card {
+    background: var(--white);
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 0 0 18px;
+    text-align: center;
+    box-shadow: 0 5px 18px rgba(0, 55, 30, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.book-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 9px 24px rgba(0, 55, 30, 0.2);
+}
+
+.book-cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: var(--white);
+}
+
+.book-card h3 {
+    margin: 16px 12px 0;
+    font-size: 18px;
+    color: var(--dark-green);
+}
+
+.read-button {
+    border: none;
+    border-radius: 6px;
+    background: var(--dark-green);
+    color: var(--white);
+    padding: 11px 24px;
+    margin-top: 16px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.read-button:hover {
+    background: #087443;
+}
+
+button:focus-visible {
+    outline: 3px solid #f0c75e;
+    outline-offset: 3px;
+}
+
+
+/* =========================================
+   HOME PAGE FOOTER
+========================================= */
+
+.site-footer {
+    text-align: center;
+    padding: 22px 15px;
+    color: var(--dark-green);
+    background: var(--light-green);
+    border-top: 1px solid rgba(0, 90, 50, 0.2);
+    font-size: 14px;
+}
+
+.site-footer p {
+    margin: 3px 0;
+}
+
+
+/* =========================================
+   READER OVERLAY
+========================================= */
+
+.viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    background: var(--light-green);
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================================
+   TOP BAR
+   Keep this bar small.
+========================================= */
+
+.reader-topbar {
+    flex: 0 0 38px;
+    height: 38px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    color: var(--white);
+    background: var(--dark-green);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* =========================================
+   MIDDLE READING AREA
+========================================= */
+
+.viewer-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 12px;
+    background: var(--light-green);
+    overscroll-behavior: contain;
+}
+
+.book-container {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    transform: scale(1);
+    transform-origin: center center;
+    transition: transform 0.2s ease;
+}
+
+/* The zoomed book can be scrolled inside
+   the middle reading area. */
+
+.viewer-stage.zoomed {
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.viewer-stage.zoomed .book-container {
+    margin: 12px auto;
+    transform: scale(1.4);
+    transform-origin: top center;
+}
+
+/* Keep the book canvas visible. */
+
+.book-container canvas {
+    display: block;
+    max-width: none;
+}
+
+
+/* =========================================
+   BOTTOM BAR
+========================================= */
+
+.reader-bottombar {
+    flex: 0 0 58px;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 18px;
+    background: var(--dark-green);
+}
+
+.reader-button {
+    min-width: 100px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 6px;
+    padding: 9px 18px;
+    background: var(--white);
+    color: var(--dark-green);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.reader-button:hover {
+    background: var(--light-green);
+}
+
+.close-button {
+    margin-right: auto;
+}
+
+.zoom-button {
+    margin-left: auto;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+    .site-header {
+        padding: 20px 12px;
+    }
+
+    .library {
+        padding: 28px 14px 40px;
+    }
+
+    .library-section h2 {
+        font-size: 24px;
+    }
+
+    .book-grid {
+        grid-template-columns: minmax(0, 270px);
+        gap: 22px;
+    }
+
+    .reader-topbar {
+        flex-basis: 34px;
+        height: 34px;
+        min-height: 34px;
+        font-size: 13px;
+    }
+
+    .viewer-stage {
+        padding: 6px;
+    }
+
+    .reader-bottombar {
+        flex-basis: 54px;
+        min-height: 54px;
+        padding: 7px 10px;
+    }
+
+    .reader-button {
+        min-width: 88px;
+        padding: 9px 12px;
+        font-size: 13px;
+    }
+
+    .viewer-stage.zoomed .book-container {
+        transform: scale(1.25);
+    }
+}
