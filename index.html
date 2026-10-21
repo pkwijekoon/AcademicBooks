@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AcademicBooks</title>
+    <meta name="description" content="An online library of academic books and learning resources.">
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Page-flipping library -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+
+    <!-- Website JavaScript -->
+    <script type="module" src="script.js"></script>
+</head>
+
+<body>
+
+    <!-- HOME PAGE HEADER -->
+    <header class="site-header">
+        <h1>AcademicBooks</h1>
+        <p>Explore • Learn • Discover</p>
+    </header>
+
+    <!-- BOOK LIBRARY -->
+    <main class="library">
+        <section class="library-section">
+            <h2>Academic Library</h2>
+
+            <div class="book-grid" id="book-library">
+
+                <!-- BOOK 1: INTRODUCTION TO R -->
+                <article
+                    class="book-card"
+                    data-book-id="introduction-to-r"
+                    data-title="Introduction to R"
+                    data-pdf="books/introduction-to-r.pdf"
+                >
+                    <img
+                        src="covers/introduction-to-r.jpg"
+                        alt="Introduction to R book cover"
+                        class="book-cover"
+                    >
+
+                    <h3>Introduction to R</h3>
+
+                    <button
+                        type="button"
+                        class="read-button"
+                        data-open-book="introduction-to-r"
+                    >
+                        Read Book
+                    </button>
+                </article>
+
+                <!--
+                ADD MORE BOOKS HERE.
+
+                Give every book a unique data-book-id.
+                Example:
+
+                <article
+                    class="book-card"
+                    data-book-id="statistics-basics"
+                    data-title="Statistics Basics"
+                    data-pdf="books/statistics-basics.pdf"
+                >
+                    <img
+                        src="covers/statistics-basics.jpg"
+                        alt="Statistics Basics book cover"
+                        class="book-cover"
+                    >
+                    <h3>Statistics Basics</h3>
+                    <button
+                        type="button"
+                        class="read-button"
+                        data-open-book="statistics-basics"
+                    >
+                        Read Book
+                    </button>
+                </article>
+                -->
+
+            </div>
+        </section>
+    </main>
+
+    <!-- BOOK READER -->
+    <section
+        id="viewer"
+        class="viewer hidden"
+        aria-label="Book reader"
+        aria-hidden="true"
+    >
+
+        <!-- SLIM TOP BAR -->
+        <header class="reader-topbar">
+            <span id="page-number" aria-live="polite">Loading book...</span>
+        </header>
+
+        <!-- MIDDLE READING AREA -->
+        <main id="viewer-stage" class="viewer-stage">
+            <div id="book-container" class="book-container"></div>
+        </main>
+
+        <!-- BOTTOM BAR -->
+        <footer class="reader-bottombar">
+
+            <button
+                type="button"
+                id="close-button"
+                class="reader-button close-button"
+            >
+                CLOSE
+            </button>
+
+            <button
+                type="button"
+                id="zoom-button"
+                class="reader-button zoom-button"
+                aria-pressed="false"
+            >
+                ZOOM +
+            </button>
+
+        </footer>
+
+    </section>
+
+    <!-- HOME PAGE FOOTER -->
+    <footer class="site-footer">
+        <p>AcademicBooks</p>
+        <p>Learn something new, one page at a time.</p>
+    </footer>
+
+</body>
+</html>
