@@ -167,6 +167,7 @@ button:focus-visible {
 }
 
 
+
 /* =========================================
    READER OVERLAY
 ========================================= */
@@ -177,8 +178,11 @@ button:focus-visible {
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    background: var(--light-green);
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
     overflow: hidden;
+    background: #c7e9c0;
 }
 
 .hidden {
@@ -187,21 +191,20 @@ button:focus-visible {
 
 
 /* =========================================
-   TOP BAR
-   Keep this bar small.
+   SLIM TOP BAR
 ========================================= */
 
 .reader-topbar {
-    flex: 0 0 38px;
-    height: 38px;
-    min-height: 38px;
+    flex: 0 0 34px;
+    height: 34px;
+    min-height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 12px;
-    color: var(--white);
-    background: var(--dark-green);
-    font-size: 14px;
+    padding: 0 8px;
+    background: #005a32;
+    color: #ffffff;
+    font-size: 13px;
     font-weight: 600;
 }
 
@@ -211,49 +214,31 @@ button:focus-visible {
 ========================================= */
 
 .viewer-stage {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
     min-width: 0;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: auto;
-    padding: 12px;
-    background: var(--light-green);
-    overscroll-behavior: contain;
+    overflow: hidden;
+    padding: 4px;
+    background: #c7e9c0;
 }
 
 .book-container {
+    flex: 0 0 auto;
     position: relative;
     display: flex;
-    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    margin: auto;
-    transform: scale(1);
-    transform-origin: center center;
-    transition: transform 0.2s ease;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 auto;
 }
-
-/* The zoomed book can be scrolled inside
-   the middle reading area. */
-
-.viewer-stage.zoomed {
-    align-items: flex-start;
-    justify-content: flex-start;
-}
-
-.viewer-stage.zoomed .book-container {
-    margin: 12px auto;
-    transform: scale(1.4);
-    transform-origin: top center;
-}
-
-/* Keep the book canvas visible. */
 
 .book-container canvas {
     display: block;
-    max-width: none;
 }
 
 
@@ -262,37 +247,54 @@ button:focus-visible {
 ========================================= */
 
 .reader-bottombar {
-    flex: 0 0 58px;
-    min-height: 58px;
-    display: flex;
+    flex: 0 0 52px;
+    min-height: 52px;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 18px;
-    background: var(--dark-green);
+    gap: 6px;
+    padding: 5px 10px;
+    background: #005a32;
 }
 
 .reader-button {
-    min-width: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    border-radius: 6px;
-    padding: 9px 18px;
-    background: var(--white);
-    color: var(--dark-green);
+    border: none;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #005a32;
+    padding: 7px 10px;
+    font-size: 12px;
     font-weight: 700;
+    line-height: 1.2;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .reader-button:hover {
-    background: var(--light-green);
+    background: #c7e9c0;
+}
+
+.reader-button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }
 
 .close-button {
-    margin-right: auto;
+    justify-self: start;
+    min-width: 65px;
+    padding: 7px 10px;
 }
 
-.zoom-button {
-    margin-left: auto;
+.page-navigation {
+    grid-column: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-navigation .reader-button {
+    min-width: 90px;
 }
 
 
@@ -301,47 +303,39 @@ button:focus-visible {
 ========================================= */
 
 @media (max-width: 600px) {
-    .site-header {
-        padding: 20px 12px;
-    }
-
-    .library {
-        padding: 28px 14px 40px;
-    }
-
-    .library-section h2 {
-        font-size: 24px;
-    }
-
-    .book-grid {
-        grid-template-columns: minmax(0, 270px);
-        gap: 22px;
-    }
-
     .reader-topbar {
-        flex-basis: 34px;
-        height: 34px;
-        min-height: 34px;
-        font-size: 13px;
+        flex-basis: 32px;
+        height: 32px;
+        min-height: 32px;
     }
 
     .viewer-stage {
-        padding: 6px;
+        padding: 2px;
     }
 
     .reader-bottombar {
-        flex-basis: 54px;
-        min-height: 54px;
-        padding: 7px 10px;
+        flex-basis: 48px;
+        min-height: 48px;
+        grid-template-columns: 70px 1fr;
+        padding: 4px 6px;
+        gap: 4px;
     }
 
-    .reader-button {
-        min-width: 88px;
-        padding: 9px 12px;
-        font-size: 13px;
+    .close-button {
+        min-width: 60px;
+        padding: 7px 6px;
+        font-size: 11px;
     }
 
-    .viewer-stage.zoomed .book-container {
-        transform: scale(1.25);
+    .page-navigation {
+        grid-column: 2;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .page-navigation .reader-button {
+        min-width: 78px;
+        padding: 8px 6px;
+        font-size: 11px;
     }
 }
