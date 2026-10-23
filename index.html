@@ -28,9 +28,7 @@
     <!-- BOOK LIBRARY -->
     <main class="library">
         <section class="library-section">
-            <h2>Academic Library</h2>
-
-            <div class="book-grid" id="book-library">
+           <div class="book-grid" id="book-library">
 
                 <!-- BOOK 1: INTRODUCTION TO R -->
                 <article
@@ -105,26 +103,38 @@
         </main>
 
         <!-- BOTTOM BAR -->
-        <footer class="reader-bottombar">
+        
+<footer class="reader-bottombar">
 
-            <button
-                type="button"
-                id="close-button"
-                class="reader-button close-button"
-            >
-                CLOSE
-            </button>
+    <button
+        type="button"
+        id="close-button"
+        class="reader-button close-button"
+    >
+        CLOSE
+    </button>
 
-            <button
-                type="button"
-                id="zoom-button"
-                class="reader-button zoom-button"
-                aria-pressed="false"
-            >
-                ZOOM +
-            </button>
+    <div class="page-navigation">
 
-        </footer>
+        <button
+            type="button"
+            id="previous-button"
+            class="reader-button"
+        >
+            ◀ PREVIOUS
+        </button>
+
+        <button
+            type="button"
+            id="next-button"
+            class="reader-button"
+        >
+            NEXT ▶
+        </button>
+
+    </div>
+
+</footer>
 
     </section>
 
