@@ -30,8 +30,9 @@ let openRequest = 0;
 const viewer = document.getElementById("viewer");
 const viewerStage = document.getElementById("viewer-stage");
 const pageNumber = document.getElementById("page-number");
-const zoomButton = document.getElementById("zoom-button");
 const closeButton = document.getElementById("close-button");
+const previousButton = document.getElementById("previous-button");
+const nextButton = document.getElementById("next-button");
 
 
 /* =========================================
@@ -120,21 +121,6 @@ function destroyFlipbook() {
     }
 }
 
-
-/* =========================================
-   RESET ZOOM
-========================================= */
-
-function resetZoom() {
-    isZoomed = false;
-
-    viewerStage.classList.remove("zoomed");
-
-    zoomButton.textContent = "ZOOM +";
-    zoomButton.setAttribute("aria-pressed", "false");
-}
-
-
 /* =========================================
    OPEN A BOOK
 ========================================= */
@@ -203,52 +189,49 @@ async function openBook(bookId, options = {}) {
          * PageFlip width and height refer to one page.
          */
 
-        const availableHeight = Math.max(
-            240,
-            viewerStage.clientHeight - 30
-        );
+       
+/* FIT THE BOOK INSIDE THE AREA BETWEEN THE BARS */
 
-        const availableWidth = Math.max(
-            180,
-            Math.min(500, (viewerStage.clientWidth - 30) / 2)
-        );
+const availableHeight = Math.max(
+    120,
+    viewerStage.clientHeight - 12
+);
 
-        let bookWidth;
-        let bookHeight;
+const availableWidth = Math.max(
+    120,
+    viewerStage.clientWidth - 12
+);
 
-        if (aspectRatio >= 0.95 && aspectRatio <= 1.05) {
-            /* SQUARE */
+const aspectRatio =
+    originalViewport.width / originalViewport.height;
 
-            bookWidth = Math.min(
-                availableWidth,
-                availableHeight
-            );
+/*
+ * PageFlip width and height refer to one page.
+ * In a two-page spread, the book can use twice
+ * the page width.
+ */
 
-            bookHeight = bookWidth;
-        } else if (aspectRatio > 1) {
-            /* LANDSCAPE */
+const maxPageWidth = Math.min(
+    500,
+    availableWidth / 2
+);
 
-            bookWidth = availableWidth;
-            bookHeight = bookWidth / aspectRatio;
+const maxPageHeight = Math.min(
+    800,
+    availableHeight
+);
 
-            if (bookHeight > availableHeight) {
-                bookHeight = availableHeight;
-                bookWidth = bookHeight * aspectRatio;
-            }
-        } else {
-            /* PORTRAIT */
+let bookWidth = maxPageWidth;
+let bookHeight = bookWidth / aspectRatio;
 
-            bookHeight = availableHeight;
-            bookWidth = bookHeight * aspectRatio;
+if (bookHeight > maxPageHeight) {
+    bookHeight = maxPageHeight;
+    bookWidth = bookHeight * aspectRatio;
+}
 
-            if (bookWidth > availableWidth) {
-                bookWidth = availableWidth;
-                bookHeight = bookWidth / aspectRatio;
-            }
-        }
+bookWidth = Math.max(100, Math.round(bookWidth));
+bookHeight = Math.max(100, Math.round(bookHeight));
 
-        bookWidth = Math.max(100, Math.round(bookWidth));
-        bookHeight = Math.max(100, Math.round(bookHeight));
 
         /* RENDER PDF PAGES AS IMAGES */
 
@@ -385,29 +368,6 @@ function closeBook(updateURL = true) {
 
 
 /* =========================================
-   ZOOM BUTTON
-========================================= */
-
-function toggleZoom() {
-    if (viewer.classList.contains("hidden")) {
-        return;
-    }
-
-    isZoomed = !isZoomed;
-
-    viewerStage.classList.toggle("zoomed", isZoomed);
-
-    zoomButton.textContent =
-        isZoomed ? "ZOOM OUT" : "ZOOM +";
-
-    zoomButton.setAttribute(
-        "aria-pressed",
-        String(isZoomed)
-    );
-}
-
-
-/* =========================================
    PAGE NAVIGATION
 ========================================= */
 
@@ -446,7 +406,13 @@ closeButton.addEventListener("click", function() {
     closeBook();
 });
 
-zoomButton.addEventListener("click", toggleZoom);
+previousButton.addEventListener("click", function() {
+    previousPage();
+});
+
+nextButton.addEventListener("click", function() {
+    nextPage();
+});
 
 
 /* =========================================
