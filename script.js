@@ -1,478 +1,426 @@
 
-/* =========================================
-   ACADEMICBOOKS - PDF READER
-========================================= */
+import * as pdfjsLib from
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.min.mjs";
 
-import {
-    getDocument,
-    GlobalWorkerOptions
-} from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.min.mjs";
-
-GlobalWorkerOptions.workerSrc =
+pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.mjs";
 
+/* BOOK INFORMATION
+   Add further books here when you are ready.
+*/
+const books = {
+    "introduction-to-r": {
+        title: "Introduction to R",
+        pdf: "books/introduction-to-r.pdf"
+    }
+};
 
-/* =========================================
-   GLOBAL VARIABLES
-========================================= */
+/* PAGE ELEMENTS */
 
-let pageFlip = null;
-let currentPDF = null;
-let currentBookId = null;
-let isZoomed = false;
-let openRequest = 0;
+const homePage = document.getElementById("home-page");
+const reader = document.getElementById("reader");
+const readingArea = document.getElementById("reading-area");
+const canvas = document.getElementById("pdf-canvas");
+const context = canvas.getContext("2d");
 
-
-/* =========================================
-   ELEMENTS
-========================================= */
-
-const viewer = document.getElementById("viewer");
-const viewerStage = document.getElementById("viewer-stage");
 const pageNumber = document.getElementById("page-number");
+const loadingMessage = document.getElementById("loading-message");
+const errorMessage = document.getElementById("error-message");
+const errorText = document.getElementById("error-text");
+
 const closeButton = document.getElementById("close-button");
 const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
+const retryButton = document.getElementById("retry-button");
+const openRButton = document.getElementById("open-introduction-to-r");
 
+/* READER STATE */
 
-/* =========================================
-   FIND A BOOK
-========================================= */
+let pdfDocument = null;
+let currentPage = 1;
+let activeBookId = null;
+let currentPdfPath = null;
+let loadingTask = null;
+let renderTask = null;
+let requestNumber = 0;
+let resizeTimer = null;
+let touchStartX = null;
+let touchStartY = null;
 
-function findBook(bookId) {
-    return Array.from(
-        document.querySelectorAll(".book-card")
-    ).find(function(card) {
-        return card.dataset.bookId === bookId;
-    });
+/* SHOW AND HIDE MESSAGES */
+
+function showLoading(message = "Loading book...") {
+    loadingMessage.textContent = message;
+    loadingMessage.classList.remove("hidden");
+    errorMessage.classList.add("hidden");
+    canvas.classList.add("hidden");
 }
 
-
-/* =========================================
-   UNIQUE BOOK URL
-========================================= */
-
-function updateBookURL(bookId) {
-    const newHash = bookId
-        ? "#book=" + encodeURIComponent(bookId)
-        : "";
-
-    if (window.location.hash !== newHash) {
-        history.pushState(
-            { bookId: bookId },
-            "",
-            window.location.pathname +
-                window.location.search +
-                newHash
-        );
-    }
+function showError(message) {
+    loadingMessage.classList.add("hidden");
+    errorMessage.classList.remove("hidden");
+    errorText.textContent = message;
+    canvas.classList.add("hidden");
 }
 
+function updateNavigation() {
+    const totalPages = pdfDocument ? pdfDocument.numPages : 1;
 
-function getBookIdFromURL() {
-    const match = window.location.hash.match(
-        /^#book=(.+)$/
-    );
-
-    if (!match) {
-        return null;
-    }
-
-    try {
-        return decodeURIComponent(match[1]);
-    } catch (error) {
-        return null;
-    }
+    pageNumber.textContent = `Page ${currentPage} of ${totalPages}`;
+    previousButton.disabled = !pdfDocument || currentPage <= 1;
+    nextButton.disabled = !pdfDocument || currentPage >= totalPages;
 }
 
+/* OPEN A BOOK */
 
-/* =========================================
-   CLEAN UP AN EXISTING FLIPBOOK
-========================================= */
-
-function destroyFlipbook() {
-    if (!pageFlip) {
-        return;
-    }
-
-    const oldContainer =
-        document.getElementById("book-container");
-
-    const parent =
-        oldContainer ? oldContainer.parentElement : null;
-
-    pageFlip.destroy();
-    pageFlip = null;
-
-    /*
-     * PageFlip.destroy() removes its container
-     * element. Create a replacement so another
-     * book can be opened later.
-     */
-
-    if (parent) {
-        const replacement =
-            document.createElement("div");
-
-        replacement.id = "book-container";
-        replacement.className = "book-container";
-
-        parent.appendChild(replacement);
-    }
-}
-
-/* =========================================
-   OPEN A BOOK
-========================================= */
-
-async function openBook(bookId, options = {}) {
-    const requestId = ++openRequest;
-
-    const book = findBook(bookId);
+async function openBook(bookId) {
+    const book = books[bookId];
 
     if (!book) {
-        pageNumber.textContent = "Book not found.";
+        showError("This book could not be found.");
+        reader.classList.remove("hidden");
+        homePage.classList.add("hidden");
         return;
     }
 
-    const pdfPath = book.dataset.pdf;
+    const thisRequest = ++requestNumber;
 
-    if (!pdfPath) {
-        pageNumber.textContent = "PDF path is missing.";
+    activeBookId = bookId;
+    currentPage = 1;
+    pdfDocument = null;
+    currentPdfPath = book.pdf;
+
+    homePage.classList.add("hidden");
+    reader.classList.remove("hidden");
+
+    document.title = `${book.title} | AcademicBooks`;
+
+    showLoading("Loading book...");
+    updateNavigation();
+
+    // Keep the current book in the URL.
+    const newHash = `#book=${encodeURIComponent(bookId)}`;
+
+    if (window.location.hash !== newHash) {
+        history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search + newHash
+        );
+    }
+
+    // Stop any previous PDF loading task.
+    if (loadingTask) {
+        try {
+            await loadingTask.destroy();
+        } catch (error) {
+            // The previous task may already have stopped.
+        }
+    }
+
+    if (thisRequest !== requestNumber) {
         return;
     }
-
-    /*
-     * Show the reader and set its unique URL.
-     */
-
-    viewer.classList.remove("hidden");
-    viewer.setAttribute("aria-hidden", "false");
-
-    currentBookId = bookId;
-
-    if (options.updateURL !== false) {
-        updateBookURL(bookId);
-    }
-
-    resetZoom();
-    destroyFlipbook();
-
-    pageNumber.textContent = "Loading book...";
 
     try {
-        /* LOAD THE PDF */
+        // Wait until the reader has its visible dimensions.
+        await new Promise(resolve => requestAnimationFrame(resolve));
 
-        const loadingTask = getDocument(pdfPath);
-        const pdf = await loadingTask.promise;
-
-        if (requestId !== openRequest) {
-            pdf.destroy();
+        if (thisRequest !== requestNumber) {
             return;
         }
 
-        currentPDF = pdf;
+        loadingTask = pdfjsLib.getDocument(book.pdf);
+        const loadedDocument = await loadingTask.promise;
 
-        /* DETECT THE PDF PAGE SHAPE */
-
-        const firstPage = await pdf.getPage(1);
-
-        const originalViewport =
-            firstPage.getViewport({ scale: 1 });
-
-        const aspectRatio =
-            originalViewport.width /
-            originalViewport.height;
-
-        /*
-         * Fit the book into the available reading area.
-         * PageFlip width and height refer to one page.
-         */
-
-       
-/* FIT THE BOOK INSIDE THE AREA BETWEEN THE BARS */
-
-const availableHeight = Math.max(
-    120,
-    viewerStage.clientHeight - 12
-);
-
-const availableWidth = Math.max(
-    120,
-    viewerStage.clientWidth - 12
-);
-
-const aspectRatio =
-    originalViewport.width / originalViewport.height;
-
-/*
- * PageFlip width and height refer to one page.
- * In a two-page spread, the book can use twice
- * the page width.
- */
-
-const maxPageWidth = Math.min(
-    500,
-    availableWidth / 2
-);
-
-const maxPageHeight = Math.min(
-    800,
-    availableHeight
-);
-
-let bookWidth = maxPageWidth;
-let bookHeight = bookWidth / aspectRatio;
-
-if (bookHeight > maxPageHeight) {
-    bookHeight = maxPageHeight;
-    bookWidth = bookHeight * aspectRatio;
-}
-
-bookWidth = Math.max(100, Math.round(bookWidth));
-bookHeight = Math.max(100, Math.round(bookHeight));
-
-
-        /* RENDER PDF PAGES AS IMAGES */
-
-        const pages = [];
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            if (requestId !== openRequest) {
-                return;
-            }
-
-            const page = await pdf.getPage(i);
-
-            /*
-             * Render at a higher resolution for
-             * clearer text when the reader zooms.
-             */
-
-            const renderScale = 1.6;
-
-            const viewport = page.getViewport({
-                scale: renderScale
-            });
-
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d");
-
-            canvas.width = Math.ceil(viewport.width);
-            canvas.height = Math.ceil(viewport.height);
-
-            await page.render({
-                canvasContext: context,
-                viewport: viewport
-            }).promise;
-
-            pages.push(
-                canvas.toDataURL("image/jpeg", 0.94)
-            );
-        }
-
-        if (requestId !== openRequest) {
+        if (thisRequest !== requestNumber) {
             return;
         }
 
-        /* CREATE THE FLIPBOOK */
+        pdfDocument = loadedDocument;
+        currentPage = 1;
 
-        const container =
-            document.getElementById("book-container");
-
-        pageFlip = new St.PageFlip(container, {
-            width: bookWidth,
-            height: bookHeight,
-
-            size: "stretch",
-
-            minWidth: 100,
-            maxWidth: 650,
-
-            minHeight: 100,
-            maxHeight: 1000,
-
-            showCover: true,
-            usePortrait: true,
-            drawShadow: true,
-            flippingTime: 700,
-            useMouseEvents: true,
-            mobileScrollSupport: true,
-            clickEventForward: true,
-            maxShadowOpacity: 0.45
-        });
-
-        /* UPDATE PAGE NUMBER BEFORE LOADING */
-
-        pageFlip.on("flip", function(event) {
-            pageNumber.textContent =
-                "Page " +
-                (event.data + 1) +
-                " of " +
-                pdf.numPages;
-        });
-
-        pageFlip.on("init", function(event) {
-            pageNumber.textContent =
-                "Page " +
-                (event.data.page + 1) +
-                " of " +
-                pdf.numPages;
-        });
-
-        pageFlip.loadFromImages(pages);
-
-        pageNumber.textContent =
-            "Page 1 of " + pdf.numPages;
-
+        await renderCurrentPage();
     } catch (error) {
-        console.error("Unable to open book:", error);
-
-        if (requestId === openRequest) {
-            pageNumber.textContent =
-                "Unable to open this book. Check the PDF file path.";
-
-            destroyFlipbook();
+        if (thisRequest !== requestNumber) {
+            return;
         }
+
+        console.error("Could not open PDF:", error);
+
+        showError(
+            "The book could not be loaded. Please check that " +
+            "books/introduction-to-r.pdf exists in your repository, " +
+            "then refresh the page."
+        );
+
+        updateNavigation();
     }
 }
 
+/* DISPLAY THE CURRENT PDF PAGE */
 
-/* =========================================
-   CLOSE THE BOOK
-========================================= */
+async function renderCurrentPage() {
+    if (!pdfDocument) {
+        return;
+    }
 
-function closeBook(updateURL = true) {
-    /*
-     * Invalidate any PDF still loading.
-     */
+    const thisDocument = pdfDocument;
+    const thisPageNumber = currentPage;
 
-    openRequest++;
+    if (renderTask) {
+        try {
+            renderTask.cancel();
+        } catch (error) {
+            // Ignore a render task that has already finished.
+        }
+        renderTask = null;
+    }
 
-    destroyFlipbook();
+    try {
+        const page = await thisDocument.getPage(thisPageNumber);
 
-    currentPDF = null;
-    currentBookId = null;
+        if (
+            pdfDocument !== thisDocument ||
+            currentPage !== thisPageNumber
+        ) {
+            return;
+        }
 
-    resetZoom();
+        const originalViewport = page.getViewport({ scale: 1 });
 
-    viewer.classList.add("hidden");
-    viewer.setAttribute("aria-hidden", "true");
+        // Leave room around the page inside the reading area.
+        const availableWidth = Math.max(50, readingArea.clientWidth - 16);
+        const availableHeight = Math.max(50, readingArea.clientHeight - 16);
 
-    pageNumber.textContent = "";
+        // Fit the whole page between the top and bottom bars.
+        const fitScale = Math.min(
+            availableWidth / originalViewport.width,
+            availableHeight / originalViewport.height
+        );
 
-    if (updateURL) {
-        updateBookURL(null);
+        const scale = Math.max(0.05, fitScale);
+        const viewport = page.getViewport({ scale });
+
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.width = Math.round(viewport.width * pixelRatio);
+        canvas.height = Math.round(viewport.height * pixelRatio);
+
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        renderTask = page.render({
+            canvasContext: context,
+            viewport: page.getViewport({ scale: scale * pixelRatio })
+        });
+
+        await renderTask.promise;
+
+        if (
+            pdfDocument !== thisDocument ||
+            currentPage !== thisPageNumber
+        ) {
+            return;
+        }
+
+        loadingMessage.classList.add("hidden");
+        errorMessage.classList.add("hidden");
+        canvas.classList.remove("hidden");
+
+        updateNavigation();
+    } catch (error) {
+        if (error && error.name === "RenderingCancelledException") {
+            return;
+        }
+
+        console.error("Page rendering failed:", error);
+        showError("This page could not be displayed. Please try again.");
+    } finally {
+        renderTask = null;
     }
 }
 
-
-/* =========================================
-   PAGE NAVIGATION
-========================================= */
-
-function nextPage() {
-    if (pageFlip) {
-        pageFlip.flipNext();
-    }
-}
-
+/* PREVIOUS AND NEXT */
 
 function previousPage() {
-    if (pageFlip) {
-        pageFlip.flipPrev();
+    if (!pdfDocument || currentPage <= 1) {
+        return;
     }
+
+    currentPage -= 1;
+    updateNavigation();
+    renderCurrentPage();
 }
 
-
-/* =========================================
-   BOOK CARD BUTTONS
-========================================= */
-
-document.querySelectorAll("[data-open-book]").forEach(
-    function(button) {
-        button.addEventListener("click", function() {
-            openBook(button.dataset.openBook);
-        });
-    }
-);
-
-
-/* =========================================
-   READER BUTTONS
-========================================= */
-
-closeButton.addEventListener("click", function() {
-    closeBook();
-});
-
-previousButton.addEventListener("click", function() {
-    previousPage();
-});
-
-nextButton.addEventListener("click", function() {
-    nextPage();
-});
-
-
-/* =========================================
-   KEYBOARD CONTROLS
-========================================= */
-
-document.addEventListener("keydown", function(event) {
-    if (viewer.classList.contains("hidden")) {
+function nextPage() {
+    if (!pdfDocument || currentPage >= pdfDocument.numPages) {
         return;
     }
 
-    if (event.key === "Escape") {
-        closeBook();
-        return;
+    currentPage += 1;
+    updateNavigation();
+    renderCurrentPage();
+}
+
+/* CLOSE THE READER */
+
+async function closeBook() {
+    ++requestNumber;
+
+    if (renderTask) {
+        try {
+            renderTask.cancel();
+        } catch (error) {
+            // Ignore an already completed render.
+        }
+        renderTask = null;
     }
 
-    if (event.key === "ArrowRight") {
-        nextPage();
+    if (loadingTask) {
+        try {
+            await loadingTask.destroy();
+        } catch (error) {
+            // Ignore an already stopped loading task.
+        }
+        loadingTask = null;
+    }
+
+    pdfDocument = null;
+    activeBookId = null;
+    currentPdfPath = null;
+    currentPage = 1;
+
+    reader.classList.add("hidden");
+    homePage.classList.remove("hidden");
+
+    canvas.classList.add("hidden");
+    loadingMessage.classList.remove("hidden");
+    errorMessage.classList.add("hidden");
+
+    pageNumber.textContent = "Page 1 of 1";
+    document.title = "AcademicBooks";
+
+    // Remove the book identifier from the URL.
+    history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search
+    );
+}
+
+/* BUTTON EVENTS */
+
+openRButton.addEventListener("click", function () {
+    openBook("introduction-to-r");
+});
+
+closeButton.addEventListener("click", closeBook);
+previousButton.addEventListener("click", previousPage);
+nextButton.addEventListener("click", nextPage);
+
+retryButton.addEventListener("click", function () {
+    if (activeBookId) {
+        openBook(activeBookId);
+    } else {
+        openBook("introduction-to-r");
+    }
+});
+
+/* KEYBOARD NAVIGATION */
+
+document.addEventListener("keydown", function (event) {
+    if (reader.classList.contains("hidden")) {
+        return;
     }
 
     if (event.key === "ArrowLeft") {
         previousPage();
+    } else if (event.key === "ArrowRight") {
+        nextPage();
+    } else if (event.key === "Escape") {
+        closeBook();
     }
 });
 
+/* SWIPE LEFT OR RIGHT ON TOUCHSCREENS */
 
-/* =========================================
-   DIRECT BOOK URL SUPPORT
-========================================= */
+readingArea.addEventListener("touchstart", function (event) {
+    if (!event.changedTouches.length) {
+        return;
+    }
+
+    touchStartX = event.changedTouches[0].clientX;
+    touchStartY = event.changedTouches[0].clientY;
+}, { passive: true });
+
+readingArea.addEventListener("touchend", function (event) {
+    if (
+        touchStartX === null ||
+        touchStartY === null ||
+        !event.changedTouches.length
+    ) {
+        return;
+    }
+
+    const touchEndX = event.changedTouches[0].clientX;
+    const touchEndY = event.changedTouches[0].clientY;
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    // Only treat a clear horizontal swipe as a page-turn gesture.
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX < 0) {
+            nextPage();
+        } else {
+            previousPage();
+        }
+    }
+
+    touchStartX = null;
+    touchStartY = null;
+}, { passive: true });
+
+/* RESIZE THE PAGE TO FIT THE READER */
+
+window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+
+    resizeTimer = setTimeout(function () {
+        if (pdfDocument && !reader.classList.contains("hidden")) {
+            renderCurrentPage();
+        }
+    }, 150);
+});
+
+/* OPEN A BOOK WHEN ITS UNIQUE URL IS USED */
 
 function openBookFromURL() {
-    const bookId = getBookIdFromURL();
+    const hash = window.location.hash;
 
-    if (!bookId) {
-        if (!viewer.classList.contains("hidden")) {
-            closeBook(false);
-        }
+    if (!hash.startsWith("#book=")) {
         return;
     }
 
-    if (bookId === currentBookId &&
-        !viewer.classList.contains("hidden")) {
+    const bookId = decodeURIComponent(hash.slice("#book=".length));
+
+    if (!books[bookId]) {
         return;
     }
 
-    openBook(bookId, { updateURL: false });
+    if (activeBookId === bookId && pdfDocument) {
+        return;
+    }
+
+    openBook(bookId);
 }
 
-
-/*
- * Handle direct links, browser back/forward,
- * and changes to the URL fragment.
- */
-
 window.addEventListener("hashchange", openBookFromURL);
-window.addEventListener("popstate", openBookFromURL);
 
-
-/* =========================================
-   STARTUP
-========================================= */
-
+// Support opening a book directly from its URL.
 openBookFromURL();
+
