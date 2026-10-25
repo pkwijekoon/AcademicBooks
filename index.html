@@ -4,145 +4,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="theme-color" content="#005a32">
     <title>AcademicBooks</title>
-    <meta name="description" content="An online library of academic books and learning resources.">
-
     <link rel="stylesheet" href="style.css">
-
-    <!-- Page-flipping library -->
-    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
-
-    <!-- Website JavaScript -->
-    <script type="module" src="script.js"></script>
 </head>
-
 <body>
 
-    <!-- HOME PAGE HEADER -->
-    <header class="site-header">
-        <h1>AcademicBooks</h1>
-        <p>Explore • Learn • Discover</p>
-    </header>
+    <!-- HOME PAGE -->
+    <main id="home-page">
+        <header class="home-header">
+            <h1>AcademicBooks</h1>
+        </header>
 
-    <!-- BOOK LIBRARY -->
-    <main class="library">
-        <section class="library-section">
-           <div class="book-grid" id="book-library">
-
-                <!-- BOOK 1: INTRODUCTION TO R -->
-                <article
-                    class="book-card"
-                    data-book-id="introduction-to-r"
-                    data-title="Introduction to R and R Studio (Posit)"
-                    data-pdf="books/introduction-to-r.pdf"
+        <section class="library">
+            <article class="book-card">
+                <img
+                    class="book-cover"
+                    src="covers/introduction-to-r.jpg"
+                    alt="Introduction to R book cover"
+                    onerror="this.style.display='none'"
                 >
-                    <img
-                        src="covers/introduction-to-r.jpg"
-                        alt="Introduction to R book cover"
-                        class="book-cover"
-                    >
+
+                <h2>Introduction to R</h2>
 
                 <button
-                        type="button"
-                        class="read-button"
-                        data-open-book="introduction-to-r"
-                    >
-                        Read Book
-                    </button>
-                </article>
-
-                <!--
-                ADD MORE BOOKS HERE.
-
-                Give every book a unique data-book-id.
-                Example:
-
-                <article
-                    class="book-card"
-                    data-book-id="statistics-basics"
-                    data-title="Statistics Basics"
-                    data-pdf="books/statistics-basics.pdf"
+                    type="button"
+                    class="open-book-button"
+                    id="open-introduction-to-r"
                 >
-                    <img
-                        src="covers/statistics-basics.jpg"
-                        alt="Statistics Basics book cover"
-                        class="book-cover"
-                    >
-                    <h3>Statistics Basics</h3>
-                    <button
-                        type="button"
-                        class="read-button"
-                        data-open-book="statistics-basics"
-                    >
-                        Read Book
-                    </button>
-                </article>
-                -->
-
-            </div>
+                    READ BOOK
+                </button>
+            </article>
         </section>
     </main>
 
-    <!-- BOOK READER -->
-    <section
-        id="viewer"
-        class="viewer hidden"
-        aria-label="Book reader"
-        aria-hidden="true"
-    >
+    <!-- READING PAGE -->
+    <section id="reader" class="reader hidden" aria-label="Book reader">
 
-        <!-- SLIM TOP BAR -->
         <header class="reader-topbar">
-            <span id="page-number" aria-live="polite">Loading book...</span>
+            <span id="page-number">Page 1 of 1</span>
         </header>
 
-        <!-- MIDDLE READING AREA -->
-        <main id="viewer-stage" class="viewer-stage">
-            <div id="book-container" class="book-container"></div>
+        <main id="reading-area" class="reading-area">
+            <div id="loading-message" class="status-message">
+                Loading book...
+            </div>
+
+            <div id="error-message" class="status-message hidden">
+                <p id="error-text">The book could not be opened.</p>
+                <button type="button" id="retry-button">TRY AGAIN</button>
+            </div>
+
+            <canvas id="pdf-canvas" class="hidden"></canvas>
         </main>
 
-        <!-- BOTTOM BAR -->
-        
-<footer class="reader-bottombar">
+        <footer class="reader-bottombar">
+            <button
+                type="button"
+                id="close-button"
+                class="reader-button close-button"
+            >
+                CLOSE
+            </button>
 
-    <button
-        type="button"
-        id="close-button"
-        class="reader-button close-button"
-    >
-        CLOSE
-    </button>
+            <nav class="page-navigation" aria-label="Page navigation">
+                <button
+                    type="button"
+                    id="previous-button"
+                    class="reader-button"
+                    disabled
+                >
+                    ◀ PREVIOUS
+                </button>
 
-    <div class="page-navigation">
-
-        <button
-            type="button"
-            id="previous-button"
-            class="reader-button"
-        >
-            ◀ PREVIOUS
-        </button>
-
-        <button
-            type="button"
-            id="next-button"
-            class="reader-button"
-        >
-            NEXT ▶
-        </button>
-
-    </div>
-
-</footer>
+                <button
+                    type="button"
+                    id="next-button"
+                    class="reader-button"
+                    disabled
+                >
+                    NEXT ▶
+                </button>
+            </nav>
+        </footer>
 
     </section>
 
-    <!-- HOME PAGE FOOTER -->
-    <footer class="site-footer">
-        <p>AcademicBooks</p>
-        <p>Learn something new, one page at a time.</p>
-    </footer>
-
+    <script type="module" src="script.js"></script>
 </body>
 </html>
+
+ 
